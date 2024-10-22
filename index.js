@@ -10,23 +10,35 @@ const fs = require("fs");
 const { type } = require("os");
 const { log } = require("console");
 const Razorpay = require("razorpay");
-const admin = require("firebase-admin");
 
 const util = require("util");
 app.use(express.json());
 app.use(cors());
 
 // Load environment variables from .env file
-require("dotenv").config();
+require('dotenv').config();
+const admin = require('firebase-admin');
+const JSON5 = require('json5'); // Optional if you need more lenient JSON parsing
 
-// Initialize Firebase Admin SDK
-// const serviceAccount = require(process.env.FIREBASE_ADMIN_SDK_PATH); // Use path from .env
-const serviceAccount = JSON.parse(process.env.service_account);
+// Use the environment variable to get the service account JSON string
+const serviceAccountString = process.env.SERVICE_ACCOUNT.replace(/\\n/g, '\n'); // Make sure this is before you try to use it
 
-admin.initializeApp({
-  credential: admin.credential.cert(serviceAccount),
-  storageBucket: process.env.FIREBASE_STORAGE_BUCKET, // Use bucket name from .env
-});
+try {
+  // Parse the JSON string to an object
+  const serviceAccount = JSON5.parse(serviceAccountString); // Or use JSON.parse if you prefer
+
+  // Initialize Firebase with the parsed service account
+  admin.initializeApp({
+    credential: admin.credential.cert(serviceAccount),
+    storageBucket: process.env.FIREBASE_STORAGE_BUCKET, // This should also be set in your .env file
+  });
+
+  console.log('Firebase initialized successfully');
+} catch (error) {
+  console.error('Error initializing Firebase:', error);
+  process.exit(1);
+}
+
 
 const bucket = admin.storage().bucket();
 
